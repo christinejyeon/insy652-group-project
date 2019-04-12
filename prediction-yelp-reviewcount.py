@@ -56,6 +56,9 @@ og_data = og_data.drop(["Unnamed: 0"], axis=1)
 og_data["num_categories"] = og_data["categories"].str.split(";").apply(len)
 og_data = og_data.drop(["categories"], axis=1)
 
+og_description = og_data.describe(include='all')
+print(og_description.transpose())
+og_description.transpose().to_excel("og_description.xlsx")
 
 ###################################### Regression ######################################
 og_regression = og_data.copy()
