@@ -6,7 +6,6 @@ from sklearn.metrics import mean_squared_error
 
 yelp_biz_hrs = pandas.read_csv("/Users/Christine/Downloads/yelp_business_hours.csv")
 yelp_biz = pandas.read_csv("/Users/Christine/Downloads/yelp_business.csv")
-yelp_biz.columns
 yelp_biz = yelp_biz.drop(["name", "neighborhood", "address", "city", "postal_code"], axis=1)
 
 temp = yelp_biz_hrs.copy()
@@ -47,8 +46,6 @@ yelp_biz_hrs.rename(columns={"total":"sunday_total"}, inplace=True)
 yelp_biz_hrs = yelp_biz_hrs.drop(["monday","tuesday","wednesday","thursday","friday","saturday","sunday"], axis=1)
 yelp_biz_hrs["week_total"] = yelp_biz_hrs.fillna(0)["monday_total"]+yelp_biz_hrs.fillna(0)["tuesday_total"]+yelp_biz_hrs.fillna(0)["wednesday_total"]+yelp_biz_hrs.fillna(0)["thursday_total"]+yelp_biz_hrs.fillna(0)["friday_total"]+yelp_biz_hrs.fillna(0)["saturday_total"]+yelp_biz_hrs.fillna(0)["sunday_total"]
 
-yelp_biz.shape
-yelp_biz_hrs.shape
 
 og_data = pandas.merge(yelp_biz,yelp_biz_hrs)
 og_data = og_data.drop(["business_id"], axis=1)
@@ -83,7 +80,7 @@ temp = temp.sort_values(by='coefficient',ascending=False)
 
 ################### Linear Regression
 from sklearn.linear_model import LinearRegression
-X = og_regression.drop(["review_count"], axis=1)
+X = og_regression.drop(["review_count","stars"], axis=1)
 y = og_regression["review_count"]
 lir_scaler = StandardScaler()
 X_std = lir_scaler.fit_transform(X)
@@ -95,42 +92,38 @@ y_test_pred = lirmodel.predict(X_test)
 mse = mean_squared_error(y_test, y_test_pred)
 print(mse)
 
-#8893.89329967535
-#9442.034046201485
+#9447.847986111376
 
 
 ################### KNN regressor
 from sklearn.neighbors import KNeighborsRegressor
-X = og_regression.drop(["review_count"], axis=1)
+X = og_regression.drop(["review_count","stars"], axis=1)
 y = og_regression["review_count"]
 knnr_scaler = StandardScaler()
 X_std = knnr_scaler.fit_transform(X)
 X_train, X_test, y_train, y_test = train_test_split(X_std, y, test_size=0.2, random_state=5)
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=5)
 
-for i in range(2,31):
+for i in range(2,21):
     knnr = KNeighborsRegressor(n_neighbors=i)
     knnrmodel = knnr.fit(X_train, y_train)
     y_val_pred = knnrmodel.predict(X_val)
     mse = mean_squared_error(y_val, y_val_pred)
     print(i, ":", mse)
-# Best n_neighbors = 30? ...
+# Best n_neighbors = 20? ...
 # Did not go too deep as it was taking too much time & it was of high possibility that it would just decrease more and more
 
-start = time.time()
-knnr = KNeighborsRegressor(n_neighbors=30)
+knnr = KNeighborsRegressor(n_neighbors=20)
 knnrmodel = knnr.fit(X_train, y_train)
 y_test_pred = knnrmodel.predict(X_test)
 mse = mean_squared_error(y_test, y_test_pred)
 print(mse)
-end = time.time()
-end-start #19.17839002609253
-#8625.571728151077
+#8989.520762373259
 
 
 ################### Random forest regressor
 from sklearn.ensemble import RandomForestRegressor
-X = og_regression.drop(["review_count"], axis=1)
+X = og_regression.drop(["review_count","stars"], axis=1)
 y = og_regression["review_count"]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=5)
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=5)
@@ -149,35 +142,22 @@ for i in range(2,20):
     y_val_pred = rfrmodel.predict(X_val)
     mse = mean_squared_error(y_val, y_val_pred)
     print(i, ":", mse)
-# Best max_depth = 15
+# Best max_depth = 10
 
 for i in range(2,15):
-    rfr = RandomForestRegressor(max_features=3, max_depth=15, min_samples_split=i, random_state=5)
+    rfr = RandomForestRegressor(max_features=3, max_depth=10, min_samples_split=i, random_state=5)
     rfrmodel = rfr.fit(X_train, y_train)
     y_val_pred = rfrmodel.predict(X_val)
     mse = mean_squared_error(y_val, y_val_pred)
     print(i, ":", mse)
-# Best min_samples_split = 13
+# Best min_samples_split = 10
 
-temp = []
-for i in range(10):
-    rfr = RandomForestRegressor(max_features=3, max_depth=15, min_samples_split=13)
-    rfrmodel = rfr.fit(X_train, y_train)
-    y_test_pred = rfrmodel.predict(X_test)
-    mse = mean_squared_error(y_test, y_test_pred)
-    temp.append(mse)
-sum(temp)/len(temp)
-
-start = time.time()
-rfr = RandomForestRegressor(max_features=3, max_depth=15, min_samples_split=13)
+rfr = RandomForestRegressor(max_features=3, max_depth=10, min_samples_split=10)
 rfrmodel = rfr.fit(X_train, y_train)
 y_test_pred = rfrmodel.predict(X_test)
 mse = mean_squared_error(y_test, y_test_pred)
 print(mse)
-end = time.time()
-end-start #2.1161742210388184
-
-# Average mse: 8231.240653630379 (iteration:10)
+# Average mse: 8616.784933334795 (iteration:10)
 
 
 ################### SVM regressor
@@ -198,37 +178,36 @@ for i in range(1,6):
     print(i, ":", mse)
     end = time.time()
     print(end-start)
-# Best C = 5
+# Could not proceed with the model as it takes too much time to build one model (more than an hour)
 
 svr = SVR(kernel="linear", epsilon=0.1, C=5)
 svrmodel = svr.fit(X_train, y_train)
 y_test_pred = svrmodel.predict(X_test)
-
 mse = mean_squared_error(y_test, y_test_pred)
 print(mse)
-# Average mse: 21927.4464 (iteration:10)
+
 
 
 ################### ANN regressor
 from sklearn.neural_network import MLPRegressor
-X = og_regression.drop(["review_count"], axis=1)
+X = og_regression.drop(["review_count","stars"], axis=1)
 y = og_regression["review_count"]
 mlpr_scaler = StandardScaler()
 X_std = mlpr_scaler.fit_transform(X)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=5)
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=5)
 
-for i in range(1,31):
+for i in range(1,21):
     annr = MLPRegressor(hidden_layer_sizes=(i), max_iter=1000, random_state=5)
     annrmodel = annr.fit(X_train, y_train)
     y_val_pred = annrmodel.predict(X_val)
     mse = mean_squared_error(y_val, y_val_pred)
     print(mse)
-# Best hidden_layer_size = 27
+# Best hidden_layer_size = 18
 
-annr = MLPRegressor(hidden_layer_sizes=(27), max_iter=1000)
+annr = MLPRegressor(hidden_layer_sizes=(18), max_iter=1000)
 annrmodel = annr.fit(X_train, y_train)
 y_test_pred = annrmodel.predict(X_test)
 mse = mean_squared_error(y_test, y_test_pred)
 print(mse)
-# Average mse: 8834.02570033474 (iteration:10)
+# Average mse: 9050.011281259096 (iteration:10)
